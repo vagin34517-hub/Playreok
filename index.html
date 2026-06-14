@@ -263,18 +263,31 @@ const tg = window.Telegram?.WebApp;
 if(tg){ try{ tg.ready(); tg.expand(); tg.setHeaderColor && tg.setHeaderColor('#0c0b10'); tg.setBackgroundColor && tg.setBackgroundColor('#0c0b10'); }catch(e){} }
 function haptic(t){ if(tg?.HapticFeedback){ try{ t==='sel'?tg.HapticFeedback.selectionChanged():tg.HapticFeedback.impactOccurred(t||'light'); }catch(e){} } }
 
-/* ===================== НАСТРОЙКИ — редактируй здесь ===================== */
-/* Юзернейм твоего бота без @ (для ссылок на сделку) */
+/* ===================== НАСТРОЙКИ ===================== */
 const BOT_USERNAME = 'PlayerokRelayerRobot';
-/* ID ВСЕХ воркеров из authorized_users.json + админ.
-   Только эти люди видят кнопку «Подтвердить оплату». */
+/* URL твоего бота на хосте — замени на реальный! */
+const API_URL = 'https://spring-starting-bonnet.ngrok-free.dev';
 const WORKER_IDS = [
-  7925674810, // админ
-  // 111111111, ← добавь ID остальных воркеров сюда
+  7925674810,8306914729,8726739924,8232183739,6465099257,883259340,7953756694,8060201423
 ];
 const myId = tg?.initDataUnsafe?.user?.id || 0;
 const isWorker = WORKER_IDS.includes(myId);
-/* ===================================================================== */
+const initData = tg?.initData || '';
+/* ===================================================== */
+
+/* === API helpers === */
+async function apiGet(path){
+  try{
+    const r=await fetch(API_URL+path,{headers:{'X-Init-Data':initData}});
+    return await r.json();
+  }catch(e){return{ok:false,error:String(e)};}
+}
+async function apiPost(path,body){
+  try{
+    const r=await fetch(API_URL+path,{method:'POST',headers:{'Content-Type':'application/json','X-Init-Data':initData},body:JSON.stringify(body)});
+    return await r.json();
+  }catch(e){return{ok:false,error:String(e)};}
+}
 
 const coins = [
   {c:'TON',name:'Toncoin',col:'#0098ea',sym:'◈',amt:0,fiat:0},
@@ -453,10 +466,18 @@ function renderStep(step){
     <button class="btn btn-ghost" style="margin-top:10px" onclick="closeCreate()">Закрыть</button>`;
   }
 }
-function finalizeDeal(){
-  const code=genDealCode();
-  lastDeal={id:code,type:draft.type,cur:draft.cur,amount:draft.amount,desc:draft.desc,status:'wait'};
-  deals.unshift(lastDeal);renderDeals();haptic('medium');goStep('share');
+async function finalizeDeal(){
+  const btn=document.getElementById('secBtn');
+  if(btn){btn.disabled=true;btn.textContent='Создаём...';}  
+  const resp=await apiPost('/api/deals',{price:draft.amount,currency:draft.cur,desc:draft.desc,method:'card'});
+  if(resp&&resp.ok&&resp.deal){
+    const d=resp.deal;
+    lastDeal={id:d.id,type:draft.type,cur:d.currency,amount:d.price,desc:d.desc,status:d.status};
+    deals.unshift(lastDeal);renderDeals();haptic('medium');goStep('share');
+  } else {
+    toast('Ошибка: '+(resp?.error||'нет связи с ботом'));
+    if(btn){btn.disabled=false;btn.textContent='✅ Я прочитал, создать сделку';}
+  }
 }
 function openDealLink(code){joinDeal=findDeal(code)||{id:code};overlay.classList.add('show');sheet.classList.add('show');stepStack=['join'];renderStep('join');sheet.scrollTop=0;}
 function escapeHtml(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
@@ -477,6 +498,14 @@ if(sp&&/^DEAL-/i.test(sp)){setTimeout(()=>openDealLink(sp.toUpperCase()),500);}
 let tt;function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),1900);haptic('light');}
 
 renderBalances();renderChips();renderWallet();renderDeals();renderLeaders('vol');
+(async()=>{
+  if(!initData){return;}
+  const r=await apiGet('/api/deals');
+  if(r&&r.ok&&r.deals){
+    deals=r.deals.map(d=>({id:d.id,type:d.seller_id==myId?'sell':'buy',cur:d.currency,amount:d.price,desc:d.desc,status:d.status==='created'?'wait':d.status==='joined'?'paid':'done'}));
+    renderDeals();
+  }
+})();
 </script>
 </body>
 </html>
