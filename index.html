@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Playerok Mini App</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{
+  --bg:#0c0b10;--bg-2:#121118;--surface:#17151f;--surface-2:#1f1c2b;--surface-3:#272235;
+  --line:#2a2735;--text:#f4f3f8;--muted:#8c8a99;--muted-2:#6a6878;
+  --accent:#8b5cf6;--accent-2:#a855f7;--accent-grad:linear-gradient(135deg,#a855f7 0%,#7c3aed 100%);
+  --accent-soft:rgba(139,92,246,.15);--green:#2ecc8f;--red:#ff5d6c;
+  --radius:18px;--radius-sm:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:radial-gradient(1200px 600px at 50% -10%,#1a1430 0%,var(--bg) 55%);
+  color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+.app{max-width:480px;margin:0 auto;min-height:100vh;padding:0 16px calc(96px + env(safe-area-inset-bottom));position:relative;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 4px 14px;position:sticky;top:0;z-index:20;background:linear-gradient(180deg,var(--bg) 60%,transparent);}
+.brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:19px;letter-spacing:-.3px;}
+.brand .logo{width:30px;height:30px;border-radius:9px;background:var(--accent-grad);display:grid;place-items:center;box-shadow:0 6px 18px rgba(124,58,237,.45);}
+.brand .logo svg{width:17px;height:17px;}
+.brand b{background:var(--accent-grad);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.top-actions{display:flex;gap:8px;}
+.icon-btn{width:38px;height:38px;border-radius:11px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;color:var(--muted);}
+.icon-btn svg{width:18px;height:18px;}
+.page-title{font-size:24px;font-weight:800;letter-spacing:-.5px;padding:2px 4px 16px;}
+.screen{display:none;animation:fade .25s ease;}
+.screen.active{display:block;}
+@keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+.btn{width:100%;border:none;border-radius:var(--radius-sm);padding:15px 16px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;color:#fff;}
+.btn svg{width:18px;height:18px;}
+.btn-primary{background:var(--accent-grad);box-shadow:0 10px 26px rgba(124,58,237,.4);}
+.btn-primary:active{transform:scale(.98);}
+.btn-primary:disabled{opacity:.5;box-shadow:none;cursor:not-allowed;}
+.btn-soft{background:var(--surface-2);color:var(--text);border:1px solid var(--line);}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--line);}
+.btn-danger{background:linear-gradient(135deg,#ff5d6c,#c2293a);box-shadow:0 10px 26px rgba(194,41,58,.4);}
+.btn-row{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
+.seg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;margin-bottom:18px;}
+.seg button{flex:1;border:none;background:transparent;color:var(--muted);font-weight:700;font-size:13.5px;padding:10px 8px;border-radius:10px;font-family:inherit;cursor:pointer;}
+.seg button.active{background:var(--accent-soft);color:#c4a8ff;}
+.empty{text-align:center;padding:56px 20px;color:var(--muted-2);}
+.empty .emoji{font-size:42px;margin-bottom:14px;}
+.empty p{font-size:14px;}
+.deal{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:15px;margin-bottom:12px;}
+.deal-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.deal-id{font-size:12.5px;color:var(--muted);font-weight:600;}
+.deal-title{font-weight:700;font-size:15px;margin-bottom:6px;}
+.deal-sub{font-size:13px;color:var(--muted);}
+.deal-amount{font-weight:800;font-size:15px;}
+.tag{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;}
+.tag.active{background:rgba(46,204,143,.15);color:var(--green);}
+.tag.wait{background:rgba(255,191,73,.15);color:#ffbf49;}
+.tag.done{background:var(--surface-3);color:var(--muted);}
+.profile-head{text-align:center;padding:6px 0 22px;}
+.avatar{width:84px;height:84px;border-radius:50%;margin:0 auto 12px;background:var(--accent-grad);display:grid;place-items:center;font-size:30px;font-weight:800;color:#fff;box-shadow:0 10px 30px rgba(124,58,237,.45);border:3px solid rgba(255,255,255,.08);}
+.profile-name{font-size:19px;font-weight:800;}
+.profile-handle{font-size:13.5px;color:var(--muted);margin-top:3px;}
+.profile-stats{display:flex;gap:10px;margin-top:16px;}
+.pstat{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:12px;text-align:center;}
+.pstat b{display:block;font-size:17px;}
+.pstat span{font-size:11.5px;color:var(--muted);}
+.rating b{color:#ffbf49;}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:16px;}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.card-head h3{font-size:15px;font-weight:800;}
+.switch{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);cursor:pointer;}
+.switch input{display:none;}
+.track{width:38px;height:22px;border-radius:20px;background:var(--surface-3);position:relative;transition:.2s;}
+.track::after{content:'';position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.2s;}
+.switch input:checked + .track{background:var(--accent);}
+.switch input:checked + .track::after{left:19px;}
+.bal{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line);}
+.bal:first-of-type{border-top:none;}
+.coin{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:15px;color:#fff;flex-shrink:0;}
+.bal-info{flex:1;}
+.bal-info b{font-size:14px;}
+.bal-info span{display:block;font-size:12px;color:var(--muted);}
+.bal-amt{text-align:right;}
+.bal-amt b{font-size:14px;}
+.bal-amt span{display:block;font-size:11.5px;color:var(--muted);}
+.bal.zero{opacity:.55;}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;margin-bottom:14px;scrollbar-width:none;}
+.chips::-webkit-scrollbar{display:none;}
+.chip{flex-shrink:0;display:flex;align-items:center;gap:7px;padding:8px 13px;border-radius:30px;background:var(--surface);border:1px solid var(--line);font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;}
+.chip.active{background:var(--accent-soft);border-color:var(--accent);color:#c4a8ff;}
+.chip .coin{width:22px;height:22px;font-size:11px;}
+.wallet-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:16px;}
+.wallet-box .lbl{font-size:12px;color:var(--muted);margin-bottom:10px;}
+.balance-big{font-size:30px;font-weight:800;letter-spacing:-1px;margin-bottom:4px;}
+.balance-big small{font-size:15px;color:var(--muted);font-weight:700;}
+.balance-fiat{font-size:13px;color:var(--muted);margin-bottom:16px;}
+.lead{display:flex;align-items:center;gap:13px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:13px 14px;margin-bottom:10px;}
+.rank{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-weight:800;font-size:14px;background:var(--surface-3);color:var(--muted);flex-shrink:0;}
+.rank.g1{background:linear-gradient(135deg,#ffd76a,#f2a900);color:#3a2700;}
+.rank.g2{background:linear-gradient(135deg,#e4e8ef,#aab2c5);color:#2a2f3a;}
+.rank.g3{background:linear-gradient(135deg,#e6a86b,#c07a3a);color:#3a2200;}
+.lead-av{width:38px;height:38px;border-radius:50%;background:var(--accent-grad);display:grid;place-items:center;font-weight:800;font-size:14px;flex-shrink:0;}
+.lead-info{flex:1;}
+.lead-info b{font-size:14px;}
+.lead-info span{font-size:12px;color:var(--muted);}
+.lead-val{text-align:right;font-weight:800;font-size:14px;}
+.lead-val span{display:block;font-size:11px;color:var(--muted);font-weight:600;}
+.nav{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;width:calc(100% - 32px);max-width:448px;background:rgba(23,21,31,.85);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:22px;padding:8px;display:flex;justify-content:space-around;z-index:30;box-shadow:0 14px 40px rgba(0,0,0,.5);}
+.nav button{background:transparent;border:none;color:var(--muted-2);font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10.5px;font-weight:600;padding:8px 14px;border-radius:14px;cursor:pointer;flex:1;}
+.nav button svg{width:22px;height:22px;}
+.nav button.active{color:#c4a8ff;background:var(--accent-soft);}
+.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(20px);background:var(--surface-2);border:1px solid var(--line);color:var(--text);padding:12px 18px;border-radius:14px;font-size:13.5px;font-weight:600;opacity:0;transition:.25s;z-index:80;pointer-events:none;box-shadow:0 10px 30px rgba(0,0,0,.5);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ===== Modal / bottom sheet ===== */
+.overlay{position:fixed;inset:0;background:rgba(4,3,8,.7);backdrop-filter:blur(4px);z-index:60;opacity:0;pointer-events:none;transition:.25s;}
+.overlay.show{opacity:1;pointer-events:auto;}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--bg-2);border:1px solid var(--line);border-bottom:none;border-radius:24px 24px 0 0;z-index:70;padding:18px 18px calc(22px + env(safe-area-inset-bottom));transform:translateY(110%);transition:transform .3s cubic-bezier(.3,.8,.3,1);max-height:90vh;overflow-y:auto;}
+.sheet.show{transform:translateY(0);}
+.sheet-grip{width:42px;height:4px;border-radius:4px;background:var(--surface-3);margin:0 auto 14px;}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.sheet-head h2{font-size:18px;font-weight:800;}
+.sheet-close{width:32px;height:32px;border-radius:50%;border:none;background:var(--surface-2);color:var(--muted);font-size:18px;cursor:pointer;}
+.back-link{display:inline-flex;align-items:center;gap:4px;color:#c4a8ff;font-size:13.5px;font-weight:700;background:none;border:none;cursor:pointer;padding:6px 0;font-family:inherit;}
+.step-title{text-align:center;font-size:14px;color:var(--muted);font-weight:600;margin:6px 0 16px;}
+.type-opt{display:flex;align-items:center;gap:12px;width:100%;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:16px;margin-bottom:12px;cursor:pointer;font-family:inherit;color:var(--text);font-size:16px;font-weight:700;}
+.type-opt .ic{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;flex-shrink:0;}
+.type-opt .ic svg{width:20px;height:20px;}
+.type-opt small{display:block;font-weight:500;font-size:12.5px;color:var(--muted);margin-top:2px;}
+.cur-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.cur-cell{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;}
+.cur-cell:active{border-color:var(--accent);}
+.cur-cell span{font-size:12.5px;font-weight:700;color:var(--muted);}
+.field{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:15px;color:var(--text);font-size:16px;font-family:inherit;outline:none;}
+.field:focus{border-color:var(--accent);}
+.amount-wrap{position:relative;margin-bottom:16px;}
+.amount-wrap .unit{position:absolute;right:16px;top:50%;transform:translateY(-50%);color:var(--muted);font-weight:700;font-size:15px;}
+textarea.field{min-height:120px;resize:vertical;line-height:1.5;}
+.hint{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:14px;font-size:12.5px;color:var(--muted);line-height:1.55;margin-bottom:14px;}
+.hint b{color:#c4a8ff;}
+.hint code{background:var(--surface-3);padding:2px 6px;border-radius:6px;color:#c4a8ff;font-size:11.5px;}
+.confirm-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:13px 0;border-top:1px solid var(--line);font-size:14px;}
+.confirm-row:first-of-type{border-top:none;}
+.confirm-row .k{color:var(--muted);font-weight:600;}
+.confirm-row .v{font-weight:800;text-align:right;}
+/* security */
+.sec-banner{background:rgba(255,93,108,.12);border:1px solid rgba(255,93,108,.35);border-radius:var(--radius-sm);padding:12px 14px;color:#ff8a95;font-size:13px;font-weight:700;margin-bottom:14px;text-align:center;}
+.sec-rule{display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.45;margin-bottom:10px;color:var(--text);}
+.sec-rule .b{flex-shrink:0;}
+.sec-rule .ok{color:var(--green);}.sec-rule .no{color:var(--red);}.sec-rule .warn{color:#ffbf49;}
+.sec-card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:13px;margin-bottom:8px;color:var(--muted);}
+.sec-note{background:var(--accent-soft);border-radius:10px;padding:12px;font-size:12.5px;color:#c4a8ff;text-align:center;margin:14px 0;}
+.sec-h{font-weight:800;font-size:13px;margin:14px 0 8px;display:flex;align-items:center;gap:7px;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="brand">
+      <span class="logo"><svg viewBox="0 0 24 24" fill="none"><path d="M6 9h12l-1.2 7.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8L6 9Z" fill="#fff"/><circle cx="9.5" cy="12.5" r="1.1" fill="#7c3aed"/><circle cx="14.5" cy="12.5" r="1.1" fill="#7c3aed"/><path d="M9 9V7a3 3 0 0 1 6 0v2" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+      <span>Player<b>ok</b></span>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" onclick="toast('Уведомлений нет')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.7 21a2 2 0 0 1-3.4 0" stroke-linecap="round"/></svg></button>
+      <button class="icon-btn" onclick="toast('Настройки')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg></button>
+    </div>
+  </div>
+
+  <!-- DEALS -->
+  <section class="screen active" id="deals">
+    <h1 class="page-title">Мои сделки</h1>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="openCreate()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        Создать сделку
+      </button>
+    </div>
+    <div class="seg" id="dealSeg">
+      <button class="active" data-tab="active">Активные</button>
+      <button data-tab="history">История сделок</button>
+    </div>
+    <div id="dealActive"></div>
+    <div id="dealHistory" style="display:none">
+      <div class="empty"><div class="emoji">📜</div><p>Завершённых сделок пока нет</p></div>
+    </div>
+  </section>
+
+  <!-- WALLETS -->
+  <section class="screen" id="wallets">
+    <h1 class="page-title">Мои кошельки</h1>
+    <div class="chips" id="walletChips"></div>
+    <div class="wallet-box">
+      <div class="lbl">Доступный баланс</div>
+      <div class="balance-big" id="wBal">0.00 <small id="wCur">TON</small></div>
+      <div class="balance-fiat" id="wFiat">≈ 0 ₽</div>
+      <button class="btn btn-soft" id="connectBtn" onclick="toast('Подключение TON кошелька')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="13" rx="3"/><path d="M16 12h.01" stroke-linecap="round"/></svg>
+        Подключить TON кошелёк
+      </button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="toast('Пополнение')">Пополнить</button>
+      <button class="btn btn-ghost" onclick="toast('Вывод средств')">Вывести</button>
+    </div>
+  </section>
+
+  <!-- LEADERS -->
+  <section class="screen" id="leaders">
+    <h1 class="page-title">Лидеры</h1>
+    <div class="seg" id="leadSeg">
+      <button class="active" data-tab="vol">По обороту</button>
+      <button data-tab="deals">По сделкам</button>
+    </div>
+    <div id="leadList"></div>
+  </section>
+
+  <!-- PROFILE -->
+  <section class="screen" id="profile">
+    <h1 class="page-title">Профиль</h1>
+    <div class="profile-head">
+      <div class="avatar" id="pAvatar">?</div>
+      <div class="profile-name" id="pName">Гость</div>
+      <div class="profile-handle" id="pHandle"></div>
+      <div class="profile-stats">
+        <div class="pstat rating"><b>5.0 ★</b><span>Рейтинг</span></div>
+        <div class="pstat"><b>0</b><span>Сделок</span></div>
+        <div class="pstat"><b>0 ₽</b><span>Оборот</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <h3>Балансы</h3>
+        <label class="switch"><input type="checkbox" id="hideZero"><span class="track"></span>Скрыть нулевые</label>
+      </div>
+      <div id="balList"></div>
+    </div>
+  </section>
+
+  <nav class="nav" id="nav">
+    <button class="active" data-screen="deals"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>Сделки</button>
+    <button data-screen="wallets"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18M16 14h2" stroke-linecap="round"/></svg>Кошельки</button>
+    <button data-screen="leaders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Z"/><path d="M17 5h2a2 2 0 0 1 0 4h-2M7 5H5a2 2 0 0 0 0 4h2"/></svg>Лидеры</button>
+    <button data-screen="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0" stroke-linecap="round"/></svg>Профиль</button>
+  </nav>
+</div>
+
+<!-- Create deal sheet -->
+<div class="overlay" id="overlay" onclick="closeCreate()"></div>
+<div class="sheet" id="sheet">
+  <div class="sheet-grip"></div>
+  <div class="sheet-head">
+    <h2 id="sheetTitle">Создать сделку</h2>
+    <button class="sheet-close" onclick="closeCreate()">×</button>
+  </div>
+  <button class="back-link" id="backBtn" style="display:none" onclick="stepBack()">‹ Назад</button>
+  <div id="sheetBody"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+if(tg){ try{ tg.ready(); tg.expand(); tg.setHeaderColor && tg.setHeaderColor('#0c0b10'); tg.setBackgroundColor && tg.setBackgroundColor('#0c0b10'); }catch(e){} }
+function haptic(t){ if(tg?.HapticFeedback){ try{ t==='sel'?tg.HapticFeedback.selectionChanged():tg.HapticFeedback.impactOccurred(t||'light'); }catch(e){} } }
+
+/* ===================== НАСТРОЙКИ — редактируй здесь ===================== */
+/* Юзернейм твоего бота без @ (для ссылок на сделку) */
+const BOT_USERNAME = 'YOUR_BOT_USERNAME';
+/* ID ВСЕХ воркеров из authorized_users.json + админ.
+   Только эти люди видят кнопку «Подтвердить оплату». */
+const WORKER_IDS = [
+  7925674810, // админ
+  // 111111111, ← добавь ID остальных воркеров сюда
+];
+const myId = tg?.initDataUnsafe?.user?.id || 0;
+const isWorker = WORKER_IDS.includes(myId);
+/* ===================================================================== */
+
+const coins = [
+  {c:'TON',name:'Toncoin',col:'#0098ea',sym:'◈',amt:0,fiat:0},
+  {c:'USDT',name:'Tether',col:'#26a17b',sym:'₮',amt:0,fiat:0},
+  {c:'STARS',name:'Telegram Stars',col:'#f5b30b',sym:'★',amt:0,fiat:0},
+  {c:'RUB',name:'Рубль',col:'#7c3aed',sym:'₽',amt:0,fiat:0},
+  {c:'KGS',name:'Сом',col:'#e23b4e',sym:'⊆',amt:0,fiat:0},
+  {c:'EUR',name:'Евро',col:'#3a6df0',sym:'€',amt:0,fiat:0},
+  {c:'GBP',name:'Фунт',col:'#8b5cf6',sym:'£',amt:0,fiat:0},
+  {c:'CNY',name:'Юань',col:'#e23b4e',sym:'¥',amt:0,fiat:0},
+  {c:'JPY',name:'Иена',col:'#2c2c34',sym:'¥',amt:0,fiat:0},
+  {c:'TRY',name:'Лира',col:'#e23b4e',sym:'₺',amt:0,fiat:0},
+  {c:'UAH',name:'Гривна',col:'#3a8df0',sym:'₴',amt:0,fiat:0},
+  {c:'KZT',name:'Тенге',col:'#19a7e0',sym:'₸',amt:0,fiat:0},
+  {c:'BTC',name:'Bitcoin',col:'#f7931a',sym:'₿',amt:0,fiat:0},
+  {c:'ETH',name:'Ethereum',col:'#3c3c3d',sym:'Ξ',amt:0,fiat:0},
+];
+function coinEl(co){return `<div class="coin" style="background:${co.col}">${co.sym}</div>`;}
+
+/* ===== Balances ===== */
+function renderBalances(){
+  const hide=document.getElementById('hideZero').checked;
+  const list=document.getElementById('balList');
+  const rows=coins.filter(co=>!hide||co.amt>0);
+  list.innerHTML=rows.map(co=>`<div class="bal ${co.amt>0?'':'zero'}">${coinEl(co)}<div class="bal-info"><b>${co.c}</b><span>${co.name}</span></div><div class="bal-amt"><b>${co.amt.toFixed(2)}</b><span>≈ ${co.fiat} ₽</span></div></div>`).join('') || '<div class="empty" style="padding:24px"><p>Нет ненулевых балансов</p></div>';
+}
+document.getElementById('hideZero').addEventListener('change',renderBalances);
+
+/* ===== Wallets ===== */
+let curWallet='TON';
+function renderChips(){
+  const wrap=document.getElementById('walletChips');
+  wrap.innerHTML=coins.map(co=>`<div class="chip ${co.c===curWallet?'active':''}" data-c="${co.c}">${coinEl(co)}${co.c}</div>`).join('');
+  wrap.querySelectorAll('.chip').forEach(ch=>ch.onclick=()=>{curWallet=ch.dataset.c;haptic('sel');renderChips();renderWallet();});
+}
+function renderWallet(){
+  const co=coins.find(c=>c.c===curWallet);
+  document.getElementById('wBal').innerHTML=`${co.amt.toFixed(2)} <small>${co.c}</small>`;
+  document.getElementById('wFiat').textContent=`≈ ${co.fiat} ₽`;
+  document.getElementById('connectBtn').style.display=co.c==='TON'?'flex':'none';
+}
+
+/* ===== Deals ===== */
+let deals=[];
+function genDealCode(){const c='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';let s='';for(let i=0;i<6;i++)s+=c[Math.floor(Math.random()*c.length)];return 'DEAL-'+s;}
+function dealLink(code){return 'https://t.me/'+BOT_USERNAME+'?start='+code;}
+function findDeal(id){return deals.find(d=>d.id===id);}
+function statusTag(s){return s==='done'?'<span class="tag done">Завершена</span>':s==='paid'?'<span class="tag active">Оплачена</span>':'<span class="tag wait">Ожидает оплаты</span>';}
+function copy(t){if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(()=>toast('Ссылка скопирована')).catch(()=>toast(t));}else toast(t);}
+function shareDeal(id){const d=findDeal(id);if(!d)return;const link=dealLink(id);const txt=`🔗 Ссылка на сделку\n#${id}\n💰 Сумма: ${d.amount} ${d.cur}\n📃 Тип: ${d.type==='buy'?'Покупка':'Продажа'}`;haptic('light');if(tg?.openTelegramLink){tg.openTelegramLink('https://t.me/share/url?url='+encodeURIComponent(link)+'&text='+encodeURIComponent(txt));}else{copy(link);}}
+function confirmPayment(id){const d=findDeal(id);if(!d){toast('Сделка не найдена');return;}if(!isWorker){toast('⚠️ У вас нет доступа к подтверждению оплат');return;}d.status='done';renderDeals();haptic('medium');toast('✅ Оплата по сделке #'+id+' подтверждена');}
+function renderDeals(){
+  const wrap=document.getElementById('dealActive');
+  const act=deals.filter(d=>d.status!=='done');
+  if(!act.length){wrap.innerHTML='<div class="empty"><div class="emoji">🤝</div><p>Нет активных сделок</p></div>';}
+  else wrap.innerHTML=act.map(d=>`<div class="deal"><div class="deal-top"><span class="deal-id">#${d.id}</span>${statusTag(d.status)}</div><div class="deal-title">${escapeHtml(d.desc)||'Без описания'}</div><div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:12px"><span class="deal-sub">${d.type==='buy'?'Покупка':'Продажа'}</span><span class="deal-amount">${d.amount} ${d.cur}</span></div><div style="display:flex;gap:8px"><button class="btn btn-soft" style="padding:11px;font-size:13px" onclick="shareDeal('${d.id}')">🔗 Поделиться</button>${isWorker?`<button class="btn btn-primary" style="padding:11px;font-size:13px" onclick="confirmPayment('${d.id}')">✅ Подтв. оплату</button>`:''}</div></div>`).join('');
+  const hist=deals.filter(d=>d.status==='done');
+  const h=document.getElementById('dealHistory');
+  if(hist.length)h.innerHTML=hist.map(d=>`<div class="deal"><div class="deal-top"><span class="deal-id">#${d.id}</span><span class="tag done">Завершена</span></div><div class="deal-title">${escapeHtml(d.desc)||'Без описания'}</div><div style="display:flex;justify-content:space-between"><span class="deal-sub">${d.type==='buy'?'Покупка':'Продажа'}</span><span class="deal-amount">${d.amount} ${d.cur}</span></div></div>`).join('');
+}
+
+/* ===== Leaders ===== */
+const leaders=[
+  {n:'CyberKing',h:'@cyberking',deals:412,vol:'1.2M ₽'},
+  {n:'GameLord',h:'@gamelord',deals:388,vol:'980K ₽'},
+  {n:'ProSeller',h:'@proseller',deals:301,vol:'765K ₽'},
+  {n:'NeoTrade',h:'@neotrade',deals:254,vol:'540K ₽'},
+  {n:'Vortex',h:'@vortex_shop',deals:198,vol:'410K ₽'},
+  {n:'LunaStore',h:'@lunastore',deals:176,vol:'355K ₽'},
+  {n:'PixelMart',h:'@pixelmart',deals:140,vol:'288K ₽'},
+];
+function renderLeaders(by){
+  document.getElementById('leadList').innerHTML=leaders.map((l,i)=>{
+    const rk=i+1,g=rk<=3?`g${rk}`:'';
+    const val=by==='deals'?`${l.deals}<span>сделок</span>`:`${l.vol}<span>оборот</span>`;
+    return `<div class="lead"><div class="rank ${g}">${rk}</div><div class="lead-av">${l.n.slice(0,2).toUpperCase()}</div><div class="lead-info"><b>${l.n}</b><span>${l.h}</span></div><div class="lead-val">${val}</div></div>`;
+  }).join('');
+}
+
+/* ===== Tabs / nav ===== */
+document.querySelectorAll('#dealSeg button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#dealSeg button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+  const a=b.dataset.tab==='active';
+  document.getElementById('dealActive').style.display=a?'block':'none';
+  document.getElementById('dealHistory').style.display=a?'none':'block';
+});
+document.querySelectorAll('#leadSeg button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#leadSeg button').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderLeaders(b.dataset.tab);
+});
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(b.dataset.screen).classList.add('active');haptic('sel');window.scrollTo(0,0);
+});
+
+/* ===== Create deal flow ===== */
+let draft={type:null,cur:null,amount:null,desc:''};
+let lastDeal=null, joinDeal=null;
+let stepStack=[];
+const overlay=document.getElementById('overlay'),sheet=document.getElementById('sheet'),body=document.getElementById('sheetBody'),backBtn=document.getElementById('backBtn'),sTitle=document.getElementById('sheetTitle');
+
+function openCreate(){draft={type:null,cur:null,amount:null,desc:''};stepStack=[];haptic('light');overlay.classList.add('show');sheet.classList.add('show');goStep('type');}
+function closeCreate(){overlay.classList.remove('show');sheet.classList.remove('show');}
+function goStep(step,push=true){if(push)stepStack.push(step);backBtn.style.display=stepStack.length>1?'inline-flex':'none';renderStep(step);sheet.scrollTop=0;}
+function stepBack(){stepStack.pop();const prev=stepStack[stepStack.length-1];backBtn.style.display=stepStack.length>1?'inline-flex':'none';renderStep(prev);}
+
+function renderStep(step){
+  if(step==='type'){sTitle.textContent='Создать сделку';body.innerHTML=`
+    <div class="step-title">Выберите тип сделки</div>
+    <button class="type-opt" data-t="buy"><span class="ic" style="background:rgba(46,204,143,.16)"><svg viewBox="0 0 24 24" fill="none" stroke="#2ecc8f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg></span><span>Купить<small>Вы покупатель в сделке</small></span></button>
+    <button class="type-opt" data-t="sell"><span class="ic" style="background:rgba(139,92,246,.16)"><svg viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></span><span>Продать<small>Вы продавец в сделке</small></span></button>`;
+    body.querySelectorAll('.type-opt').forEach(o=>o.onclick=()=>{draft.type=o.dataset.t;haptic('sel');goStep('cur');});
+  }
+  else if(step==='cur'){sTitle.textContent='Создать сделку';body.innerHTML=`<div class="step-title">Выберите валюту</div><div class="cur-grid">${coins.map(co=>`<button class="cur-cell" data-c="${co.c}">${coinEl(co)}<span>${co.c}</span></button>`).join('')}</div>`;
+    body.querySelectorAll('.cur-cell').forEach(o=>o.onclick=()=>{draft.cur=o.dataset.c;haptic('sel');goStep('amount');});
+  }
+  else if(step==='amount'){sTitle.textContent='Создать сделку';body.innerHTML=`<div class="step-title">Введите сумму</div>
+    <div class="amount-wrap"><input class="field" id="amtInput" type="number" inputmode="decimal" placeholder="0.00" value="${draft.amount||''}"><span class="unit">${draft.cur}</span></div>
+    <button class="btn btn-primary" id="amtNext">Далее</button>`;
+    const inp=document.getElementById('amtInput');setTimeout(()=>inp.focus(),200);
+    document.getElementById('amtNext').onclick=()=>{const v=parseFloat(inp.value);if(!v||v<=0){toast('Введите корректную сумму');return;}draft.amount=v;haptic('sel');goStep('desc');};
+  }
+  else if(step==='desc'){sTitle.textContent='Создать сделку';body.innerHTML=`<div class="step-title">Описание товара</div>
+    <div class="hint"><b>🎁 Если это NFT-подарок:</b><br>Профиль Telegram → Подарки → «Скопировать ссылку». Несколько подарков — каждый со своей строки:<br><code>https://t.me/nft/Gift-1</code><br><br><b>Иначе</b> просто опишите товар, например <code>2 Crystals and 1 Banner</code>.</div>
+    <textarea class="field" id="descInput" placeholder="Вставьте ссылки или опишите товар…">${draft.desc||''}</textarea>
+    <button class="btn btn-primary" id="descNext" style="margin-top:14px">Далее</button>`;
+    document.getElementById('descNext').onclick=()=>{const v=document.getElementById('descInput').value.trim();if(!v){toast('Добавьте описание');return;}draft.desc=v;haptic('sel');goStep('confirm');};
+  }
+  else if(step==='confirm'){sTitle.textContent='Создать сделку';body.innerHTML=`<div class="step-title">Подтверждение</div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="confirm-row"><span class="k">Тип:</span><span class="v">${draft.type==='buy'?'Покупка':'Продажа'}</span></div>
+      <div class="confirm-row"><span class="k">Сумма:</span><span class="v">${draft.amount} ${draft.cur}</span></div>
+      <div class="confirm-row"><span class="k">Описание:</span><span class="v" style="max-width:60%">${escapeHtml(draft.desc)}</span></div>
+    </div>
+    <button class="btn btn-primary" id="toSec">Создать сделку</button>`;
+    document.getElementById('toSec').onclick=()=>{haptic('medium');goStep('security');};
+  }
+  else if(step==='security'){sTitle.textContent='Безопасность сделки';body.innerHTML=`
+    <div class="sec-banner">🔺 ВНИМАНИЕ! ВАЖНАЯ ИНФОРМАЦИЯ О БЕЗОПАСНОСТИ</div>
+    <p style="font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:6px">Мошенники возвращают платёж за сделку и просят передать товар напрямую, минуя эскроу-аккаунт.</p>
+    <div class="sec-h">🟢 Правила безопасности:</div>
+    <div class="sec-rule"><span class="b ok">✔</span><span>Передавайте товар ТОЛЬКО на эскроу-аккаунт бота</span></div>
+    <div class="sec-rule"><span class="b no">✖</span><span>НИКОГДА не отправляйте напрямую покупателю</span></div>
+    <div class="sec-rule"><span class="b warn">⚠</span><span>Даже если покупатель уговаривает — НЕ ДЕЛАЙТЕ ЭТОГО</span></div>
+    <div class="sec-h">⚠️ Если вы нарушите правила:</div>
+    <div class="sec-card">Станете без денег</div>
+    <div class="sec-card">Станете без товара</div>
+    <div class="sec-card">Мы не сможем вам помочь</div>
+    <div class="sec-note">🔒 Помните: только эскроу бота гарантирует безопасность сделки.</div>
+    <button class="btn btn-danger" id="secBtn" disabled>Прочитайте — 6с</button>`;
+    let left=6;const sb=document.getElementById('secBtn');
+    const iv=setInterval(()=>{left--;if(left>0){sb.textContent='Прочитайте — '+left+'с';}else{clearInterval(iv);sb.disabled=false;sb.textContent='✅ Я прочитал, создать сделку';}},1000);
+    sb.onclick=()=>{if(sb.disabled)return;clearInterval(iv);finalizeDeal();};
+  }
+  else if(step==='share'){sTitle.textContent='Ссылка на сделку';backBtn.style.display='none';const d=lastDeal,link=dealLink(d.id);
+    body.innerHTML=`<div class="step-title">Сделка создана 🎉</div>
+    <div class="card" style="margin-bottom:14px">
+      <div class="confirm-row"><span class="k">ID:</span><span class="v">#${d.id}</span></div>
+      <div class="confirm-row"><span class="k">Сумма:</span><span class="v">${d.amount} ${d.cur}</span></div>
+      <div class="confirm-row"><span class="k">Тип:</span><span class="v">${d.type==='buy'?'Покупка':'Продажа'}</span></div>
+    </div>
+    <div class="hint" style="word-break:break-all">🔗 ${link}</div>
+    <button class="btn btn-primary" onclick="shareDeal('${d.id}')">🔗 Поделиться ссылкой</button>
+    <button class="btn btn-soft" style="margin-top:10px" onclick="copy('${link}')">📋 Скопировать ссылку</button>
+    <button class="btn btn-ghost" style="margin-top:10px" onclick="closeCreate()">Готово</button>`;
+  }
+  else if(step==='join'){sTitle.textContent='Ссылка на сделку';backBtn.style.display='none';const d=joinDeal;
+    body.innerHTML=`<div class="step-title">Присоединение к сделке</div>
+    <div class="card" style="margin-bottom:14px">
+      <div class="confirm-row"><span class="k">Сделка:</span><span class="v">#${d.id}</span></div>
+      <div class="confirm-row"><span class="k">Сумма:</span><span class="v">${d.amount?d.amount+' '+d.cur:'—'}</span></div>
+      <div class="confirm-row"><span class="k">Тип:</span><span class="v">${d.type?(d.type==='buy'?'Покупка':'Продажа'):'—'}</span></div>
+    </div>
+    <p style="font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:14px">${isWorker?'Вы воркер — проверьте оплату и подтвердите её ниже.':'Откройте мини-приложение, чтобы присоединиться к сделке или посмотреть детали.'}</p>
+    ${isWorker?`<button class="btn btn-primary" onclick="confirmPayment('${d.id}');closeCreate();">✅ Подтвердить оплату</button>`:`<button class="btn btn-primary" onclick="toast('⏳ Ожидайте подтверждение оплаты')">Присоединиться к сделке</button>`}
+    <button class="btn btn-ghost" style="margin-top:10px" onclick="closeCreate()">Закрыть</button>`;
+  }
+}
+function finalizeDeal(){
+  const code=genDealCode();
+  lastDeal={id:code,type:draft.type,cur:draft.cur,amount:draft.amount,desc:draft.desc,status:'wait'};
+  deals.unshift(lastDeal);renderDeals();haptic('medium');goStep('share');
+}
+function openDealLink(code){joinDeal=findDeal(code)||{id:code};overlay.classList.add('show');sheet.classList.add('show');stepStack=['join'];renderStep('join');sheet.scrollTop=0;}
+function escapeHtml(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+/* ===== Telegram user (имя берётся из Telegram, в коде ничего личного нет) ===== */
+const u=tg?.initDataUnsafe?.user;
+if(u){
+  const fn=[u.first_name,u.last_name].filter(Boolean).join(' ')||'Гость';
+  document.getElementById('pName').textContent=fn;
+  document.getElementById('pHandle').textContent=u.username?('@'+u.username):'';
+  document.getElementById('pAvatar').textContent=fn.split(' ').map(s=>s[0]).join('').slice(0,2).toUpperCase()||'?';
+}
+if(isWorker){const b=document.createElement('div');b.textContent='✨ Воркер · может подтверждать оплату';b.style.cssText='display:inline-block;margin-top:10px;padding:6px 14px;border-radius:20px;background:var(--accent-soft);color:#c4a8ff;font-size:12px;font-weight:700';document.querySelector('.profile-head').appendChild(b);}
+/* Открытие по ссылке на сделку (?start=DEAL-XXXX) */
+const sp=tg?.initDataUnsafe?.start_param;
+if(sp&&/^DEAL-/i.test(sp)){setTimeout(()=>openDealLink(sp.toUpperCase()),500);}
+
+let tt;function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),1900);haptic('light');}
+
+renderBalances();renderChips();renderWallet();renderDeals();renderLeaders('vol');
+</script>
+</body>
+</html>
